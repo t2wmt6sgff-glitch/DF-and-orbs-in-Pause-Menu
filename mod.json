@@ -1,0 +1,11 @@
+{
+  "geode": ">=v4.0.0",
+  "gd": {
+    "ios": "2.2081"
+  },
+  "id": "t2wmt6sgff.df-and-orbs-in-pause-menu",
+  "name": "DF and orbs in Pause Menu",
+  "version": "v0.1.0",
+  "developer": "t2wmt6sgff-glitch",
+  "description": "Displays the level difficulty in the pause menu and, for verified levels, shows collected orbs and diamonds."
+}
