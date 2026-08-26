@@ -6,24 +6,29 @@ on:
     branches:
       - "**"
 
+permissions:
+  contents: read
+
 jobs:
   build-ios:
     name: Build iOS
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
 
-      - name: Build the mod
+      - name: Build Geode mod
+        id: build
         uses: geode-sdk/build-geode-mod@main
         with:
+          sdk: given
           target: iOS
-          combine: true
+          combine: false
 
-      - name: Upload iOS build
+      - name: Upload .geode artifact
         uses: actions/upload-artifact@v7
         with:
           name: DF-and-orbs-in-Pause-Menu-iOS
-          path: build/**/*.geode
+          path: ${{ steps.build.outputs.build-output }}/*.geode
           if-no-files-found: error
