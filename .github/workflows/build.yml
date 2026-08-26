@@ -1,0 +1,29 @@
+name: Build Geode Mod
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build the mod
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          target: iOS
+          combine: true
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v7
+        with:
+          name: DF-and-orbs-in-Pause-Menu-iOS
+          path: build/**/*.geode
+          if-no-files-found: error
