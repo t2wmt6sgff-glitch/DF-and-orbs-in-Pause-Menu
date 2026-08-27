@@ -20,13 +20,14 @@ jobs:
 
       - name: Build Geode mod
         id: build
-        # Pin to the exact build action revision used by successful Build #6.
+        # Keep the exact build action revision used by successful Build #16.
         uses: geode-sdk/build-geode-mod@963ac394ad1773b6ea5b0f96aade52a44c6a4770
         with:
           sdk: given
           target: iOS
           combine: false
-          bindings-ref: e7ce86056847b2efca814574c619cc0ecf76c39d
+          # Explicit 2.2081 iOS bindings ported from the 2.2074 mobile bindings.
+          bindings-ref: 9dce9b95f7b60b914f6ddb91b414849b060e87a2
 
       - name: Upload .geode artifact
         uses: actions/upload-artifact@v7
