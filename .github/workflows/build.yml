@@ -20,7 +20,8 @@ jobs:
 
       - name: Build Geode mod
         id: build
-        uses: geode-sdk/build-geode-mod@main
+        # Pin to the exact build action revision used by successful Build #6.
+        uses: geode-sdk/build-geode-mod@963ac394ad1773b6ea5b0f96aade52a44c6a4770
         with:
           sdk: given
           target: iOS
