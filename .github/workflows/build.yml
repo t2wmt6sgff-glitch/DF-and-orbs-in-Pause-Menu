@@ -25,7 +25,7 @@ jobs:
           sdk: given
           target: iOS
           combine: false
-          bindings-ref: 7431f0cf02fac40e6fa04faf30a7e248a6fee60d
+          bindings-ref: f76dcb54cf963d848c7909448075d33d425e03bf
 
       - name: Upload .geode artifact
         uses: actions/upload-artifact@v7
