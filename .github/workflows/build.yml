@@ -26,8 +26,8 @@ jobs:
           sdk: given
           target: iOS
           combine: false
-          # Explicit 2.2081 iOS bindings ported from the 2.2074 mobile bindings.
-          bindings-ref: 9dce9b95f7b60b914f6ddb91b414849b060e87a2
+          # 2.2081 bindings revision whose iOS inline bindings match Geode 5.x headers.
+          bindings-ref: 51d59fe8c504dc692420609f285625d454cc2454
 
       - name: Upload .geode artifact
         uses: actions/upload-artifact@v7
