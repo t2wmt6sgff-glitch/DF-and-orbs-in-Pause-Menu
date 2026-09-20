@@ -132,8 +132,8 @@ namespace {
             return false;
         }
 
-        result.origin = {minX, minY};
-        result.size = {maxX - minX, maxY - minY};
+        result.origin = CCPoint(minX, minY);
+        result.size = CCSize(maxX - minX, maxY - minY);
         return true;
     }
 
@@ -208,15 +208,21 @@ namespace {
         auto const height = contentSize.height * scale;
 
         CCRect result;
-        result.origin = {position.x - width * 0.5f, position.y - height * 0.5f};
-        result.size = {width, height};
+        result.origin = CCPoint(
+            position.x - width * 0.5f,
+            position.y - height * 0.5f
+        );
+        result.size = CCSize(width, height);
         return result;
     }
 
     CCRect expandedRect(CCRect const& rect, float amount) {
         CCRect result;
-        result.origin = {rect.origin.x - amount, rect.origin.y - amount};
-        result.size = {rect.size.width + amount * 2.f, rect.size.height + amount * 2.f};
+        result.origin = CCPoint(rect.origin.x - amount, rect.origin.y - amount);
+        result.size = CCSize(
+            rect.size.width + amount * 2.f,
+            rect.size.height + amount * 2.f
+        );
         return result;
     }
 
@@ -329,11 +335,11 @@ namespace {
         );
 
         CCRect safeBounds;
-        safeBounds.origin = {kSafeInset, kSafeInset};
-        safeBounds.size = {
+        safeBounds.origin = CCPoint(kSafeInset, kSafeInset);
+        safeBounds.size = CCSize(
             std::max(0.f, layerSize.width - kSafeInset * 2.f),
-            std::max(0.f, layerSize.height - kSafeInset * 2.f),
-        };
+            std::max(0.f, layerSize.height - kSafeInset * 2.f)
+        );
 
         std::array<float, 3> const scales {{
             kDifficultyFaceScale,
