@@ -572,12 +572,14 @@ namespace {
         auto* level = playLayer->m_level;
         auto const stars = level->m_stars.value();
         auto const platformer = level->isPlatformer();
-        if (stars <= 0 || platformer) {
+        auto const testMode = playLayer->m_isTestMode;
+        if (stars <= 0 || platformer || testMode) {
             log::info(
-                "DF and orbs in Pause Menu: level ID {} does not use normal-mode Mana Orb rewards (stars={}, platformer={}); display omitted.",
+                "DF and orbs in Pause Menu: level ID {} does not use persistent normal-mode Mana Orb rewards (stars={}, platformer={}, test mode={}); display omitted.",
                 level->m_levelID.value(),
                 stars,
-                platformer
+                platformer,
+                testMode
             );
             return;
         }
