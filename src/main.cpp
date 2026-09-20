@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
+#include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/GJDifficultySprite.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/PauseLayer.hpp>
@@ -20,7 +21,12 @@ namespace {
     constexpr float kPositionGap = 6.f;
     constexpr float kSafeInset = 4.f;
     constexpr float kMinimumObstacleSize = 1.f;
+    constexpr float kOrbIconScale = 0.55f;
+    constexpr float kOrbLabelScale = 0.4f;
+    constexpr float kOrbDisplayGap = 3.f;
+    constexpr float kOrbDisplayVerticalGap = 4.f;
     constexpr int kMaximumObstacleDepth = 5;
+    constexpr char const* kOrbSpriteFrame = "currencyOrbIcon_001.png";
 
     struct PlacementResult {
         CCPoint position;
@@ -545,6 +551,176 @@ namespace {
             placement.scale
         );
     }
+
+    void addOrbDisplay(PauseLayer* pauseLayer) {
+        if (!pauseLayer) {
+            log::warn("DF and orbs in Pause Menu: PauseLayer was unavailable; Mana Orb display omitted.");
+            return;
+        }
+
+        if (pauseLayer->getChildByID("orb-display"_spr)) {
+            log::warn("DF and orbs in Pause Menu: Mana Orb display already exists; skipping duplicate.");
+            return;
+        }
+
+        auto* playLayer = PlayLayer::get();
+        if (!playLayer || !playLayer->m_level) {
+            log::warn("DF and orbs in Pause Menu: no current GJGameLevel was available; Mana Orb display omitted.");
+            return;
+        }
+
+        auto* level = playLayer->m_level;
+        auto const stars = level->m_stars.value();
+        auto const platformer = level->isPlatformer();
+        if (stars <= 0 || platformer) {
+            log::info(
+                "DF and orbs in Pause Menu: level ID {} does not use normal-mode Mana Orb rewards (stars={}, platformer={}); display omitted.",
+                level->m_levelID.value(),
+                stars,
+                platformer
+            );
+            return;
+        }
+
+        auto* statsManager = GameStatsManager::get();
+        if (!statsManager) {
+            log::warn("DF and orbs in Pause Menu: GameStatsManager was unavailable; Mana Orb display omitted.");
+            return;
+        }
+
+        // Let Geometry Dash decide whether this level type awards Mana Orbs. This
+        // covers official, online, Daily/Weekly, and Gauntlet bookkeeping without
+        // duplicating the game's currency-score dictionary selection.
+        auto const baseCurrency = statsManager->getBaseCurrencyForLevel(level);
+        if (baseCurrency <= 0) {
+            log::info(
+                "DF and orbs in Pause Menu: level ID {} has no Mana Orb reward (base currency={}); display omitted.",
+                level->m_levelID.value(),
+                baseCurrency
+            );
+            return;
+        }
+
+        auto const awardedCurrency = statsManager->getAwardedCurrencyForLevel(level);
+        if (awardedCurrency < 0) {
+            log::warn(
+                "DF and orbs in Pause Menu: Geometry Dash returned invalid awarded currency {} for level ID {}; display omitted.",
+                awardedCurrency,
+                level->m_levelID.value()
+            );
+            return;
+        }
+
+        log::info(
+            "DF and orbs in Pause Menu: level ID {} awarded Mana Orbs={} (stars={}, daily ID={}, gauntlet={}, base currency={}).",
+            level->m_levelID.value(),
+            awardedCurrency,
+            stars,
+            level->m_dailyID.value(),
+            level->m_gauntletLevel,
+            baseCurrency
+        );
+
+        auto* frameCache = CCSpriteFrameCache::get();
+        if (!frameCache || !frameCache->spriteFrameByName(kOrbSpriteFrame)) {
+            log::warn(
+                "DF and orbs in Pause Menu: original GD Mana Orb frame '{}' was unavailable; display omitted.",
+                kOrbSpriteFrame
+            );
+            return;
+        }
+
+        auto* orbSprite = CCSprite::createWithSpriteFrameName(kOrbSpriteFrame);
+        if (!orbSprite) {
+            log::warn("DF and orbs in Pause Menu: Mana Orb sprite creation failed; display omitted.");
+            return;
+        }
+
+        auto const orbText = fmt::format("{}", awardedCurrency);
+        auto* orbLabel = CCLabelBMFont::create(orbText.c_str(), "bigFont.fnt");
+        if (!orbLabel) {
+            log::warn("DF and orbs in Pause Menu: Mana Orb label creation failed; display omitted.");
+            return;
+        }
+
+        auto* orbDisplay = CCNode::create();
+        if (!orbDisplay) {
+            log::warn("DF and orbs in Pause Menu: Mana Orb container creation failed; display omitted.");
+            return;
+        }
+
+        orbSprite->setID("orb-sprite"_spr);
+        orbSprite->setScale(kOrbIconScale);
+        orbSprite->setAnchorPoint({0.f, 0.5f});
+
+        orbLabel->setID("orb-label"_spr);
+        orbLabel->setScale(kOrbLabelScale);
+        orbLabel->setAnchorPoint({0.f, 0.5f});
+
+        auto const iconWidth = orbSprite->getContentSize().width * kOrbIconScale;
+        auto const iconHeight = orbSprite->getContentSize().height * kOrbIconScale;
+        auto const labelWidth = orbLabel->getContentSize().width * kOrbLabelScale;
+        auto const labelHeight = orbLabel->getContentSize().height * kOrbLabelScale;
+        auto const displaySize = CCSize(
+            iconWidth + kOrbDisplayGap + labelWidth,
+            std::max(iconHeight, labelHeight)
+        );
+
+        orbDisplay->setID("orb-display"_spr);
+        orbDisplay->setContentSize(displaySize);
+        orbDisplay->setAnchorPoint({0.5f, 0.5f});
+        orbDisplay->ignoreAnchorPointForPosition(false);
+
+        orbSprite->setPosition({0.f, displaySize.height * 0.5f});
+        orbLabel->setPosition({iconWidth + kOrbDisplayGap, displaySize.height * 0.5f});
+        orbDisplay->addChild(orbSprite);
+        orbDisplay->addChild(orbLabel);
+
+        auto layerSize = pauseLayer->getContentSize();
+        if (layerSize.width <= 0.f || layerSize.height <= 0.f) {
+            layerSize = CCDirector::get()->getWinSize();
+        }
+
+        auto position = CCPoint(
+            std::clamp(layerSize.width * 0.08f, 36.f, 48.f),
+            layerSize.height - 64.f
+        );
+        if (auto* difficultyFace = pauseLayer->getChildByID("difficulty-face"_spr)) {
+            auto const faceRect = faceRectAt(
+                difficultyFace,
+                difficultyFace->getPosition(),
+                difficultyFace->getScale()
+            );
+            position.x = difficultyFace->getPositionX();
+            position.y = faceRect.origin.y - kOrbDisplayVerticalGap - displaySize.height * 0.5f;
+
+            if (position.y - displaySize.height * 0.5f < kSafeInset) {
+                position.y = faceRect.origin.y + faceRect.size.height +
+                    kOrbDisplayVerticalGap + displaySize.height * 0.5f;
+            }
+        }
+
+        auto const minimumX = kSafeInset + displaySize.width * 0.5f;
+        auto const maximumX = layerSize.width - kSafeInset - displaySize.width * 0.5f;
+        auto const minimumY = kSafeInset + displaySize.height * 0.5f;
+        auto const maximumY = layerSize.height - kSafeInset - displaySize.height * 0.5f;
+        position.x = maximumX >= minimumX
+            ? std::clamp(position.x, minimumX, maximumX)
+            : layerSize.width * 0.5f;
+        position.y = maximumY >= minimumY
+            ? std::clamp(position.y, minimumY, maximumY)
+            : layerSize.height * 0.5f;
+
+        orbDisplay->setPosition(position);
+        pauseLayer->addChild(orbDisplay, 10);
+
+        log::info(
+            "DF and orbs in Pause Menu: Mana Orb display created successfully with '{}' and bigFont.fnt at ({}, {}).",
+            kOrbSpriteFrame,
+            position.x,
+            position.y
+        );
+    }
 }
 
 class $modify(DFPauseLayer, PauseLayer) {
@@ -560,6 +736,7 @@ class $modify(DFPauseLayer, PauseLayer) {
         PauseLayer::customSetup();
 
         addDifficultyFace(this);
+        addOrbDisplay(this);
 
         log::info("DF and orbs in Pause Menu: PauseLayer::customSetup hook completed.");
     }
